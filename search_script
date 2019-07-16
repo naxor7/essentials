@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# This script searches all your files for specific words
+
+usage() {
+	echo "w WORD Specify the word to be searched"
+	echo "Example: ${0} -w 'hello'"
+}
+
+search_util() {
+	local CUR_DIR=${1}
+	local SEARCH_TERM=${2}
+	cd ${CUR_DIR}
+	for ITEM in $( ls )
+	do
+		PWD=$(pwd)
+		
+		if [[ "${PWD: -1}" == "/" ]]
+		then
+			DIR_PATH=$PWD$ITEM
+		else
+			DIR_PATH=$PWD/$ITEM
+		fi
+
+		if [[ -f $DIR_PATH ]] && [[ $( echo ${ITEM} | grep ${SEARCH_TERM} | wc -l ) -gt 0 ]]
+		then
+			echo "MATCH FOUND: ${DIR_PATH}"
+			echo $DIR_PATH >> /found
+		elif [[ -d $DIR_PATH ]]
+		then
+			search_util "$ITEM" $SEARCH_TERM
+		fi
+	done
+	cd ..
+}
+
+while getopts "w:" OPTION
+do
+	case $OPTION in
+		w) SEARCH_TERM=$OPTARG ;;
+		?) usage ; exit 1 ;;
+	esac
+done
+
+if [[ -z $SEARCH_TERM ]]
+then
+	usage
+	exit 1
+else
+	search_util "/" $SEARCH_TERM
+fi
